@@ -1,0 +1,70 @@
+import httpStatus from 'http-status';
+import AppError from '../../utils/AppError';
+import prisma from '../../utils/prisma';
+import { PaymentStatus, RequestStatus } from '../../../generated/prisma';
+
+const createReview = async (
+  tenantId: string,
+  payload: { propertyId: string; rating: number; comment: string },
+) => {
+  // Verify a completed/paid rental exists between the tenant and property
+  const completedRental = await prisma.rentalRequest.findFirst({
+    where: {
+      tenantId,
+      propertyId: payload.propertyId,
+      status: RequestStatus.APPROVED,
+      payments: {
+        some: { status: PaymentStatus.COMPLETED },
+      },
+    },
+  });
+
+  if (!completedRental) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You can only review a property after completing a paid rental',
+    );
+  }
+
+  // Prevent duplicate review for the same property
+  const existingReview = await prisma.review.findFirst({
+    where: {
+      tenantId,
+      propertyId: payload.propertyId,
+    },
+  });
+
+  if (existingReview) {
+    throw new AppError(httpStatus.CONFLICT, 'You have already reviewed this property');
+  }
+
+  const result = await prisma.review.create({
+    data: {
+      ...payload,
+      tenantId,
+    },
+    include: {
+      property: { select: { id: true, title: true } },
+      tenant: { select: { id: true, name: true } },
+    },
+  });
+
+  return result;
+};
+
+const getPropertyReviews = async (propertyId: string) => {
+  const result = await prisma.review.findMany({
+    where: { propertyId },
+    include: {
+      tenant: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return result;
+};
+
+export const ReviewService = {
+  createReview,
+  getPropertyReviews,
+};
