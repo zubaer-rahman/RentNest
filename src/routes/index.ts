@@ -7,6 +7,7 @@ import { AdminRoutes } from '../modules/user/admin.route';
 import { CategoryRoutes } from '../modules/category/category.route';
 import { PropertyRoutes } from '../modules/property/property.route';
 import { RentalRoutes } from '../modules/rental/rental.route';
+import { PaymentRoutes } from '../modules/payment/payment.route';
 
 const router = express.Router();
 
@@ -34,6 +35,10 @@ const moduleRoutes = [
   {
     path: '/rentals',
     route: RentalRoutes,
+  },
+  {
+    path: '/payments',
+    route: PaymentRoutes,
   }
 ];
 
