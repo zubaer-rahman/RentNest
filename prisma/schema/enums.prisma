@@ -15,3 +15,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
 }
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
