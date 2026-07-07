@@ -48,9 +48,37 @@ const getPaymentById = catchAsync(async (req, res) => {
   });
 });
 
+const stripeWebhook = catchAsync(async (req, res) => {
+  const stripe = require('stripe')(require('../../config').default.stripe_secret_key);
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      require('../../config').default.stripe_webhook_secret
+    );
+  } catch (err: any) {
+    res.status(400).send(`Webhook Error: ${err.message}`);
+    return;
+  }
+
+  // Handle the event
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    // Here you would typically call a service method to update the payment status
+    // For example: await PaymentService.confirmStripePayment(paymentIntent.id);
+  }
+
+  res.json({ received: true });
+});
+
 export const PaymentController = {
   createPayment,
   confirmPayment,
   getMyPayments,
   getPaymentById,
+  stripeWebhook,
 };

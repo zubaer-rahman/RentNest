@@ -14,6 +14,10 @@ app.use(
   }),
 );
 
+// Stripe Webhook needs the raw body
+import { PaymentController } from "./modules/payment/payment.controller";
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), PaymentController.stripeWebhook);
+
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
