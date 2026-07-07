@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
-import prisma from '../../utils/prisma';
+import prisma from '../../lib/prisma';
 import { PaymentStatus, RequestStatus } from '../../../generated/prisma';
 
 const createPayment = async (

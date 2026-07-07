@@ -2,6 +2,8 @@ import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { PaymentService } from './payment.service';
+import stripe from '../../lib/stripe';
+import config from '../../config';
 
 const createPayment = catchAsync(async (req, res) => {
   const result = await PaymentService.createPayment(req.user.id, req.body);
@@ -49,7 +51,6 @@ const getPaymentById = catchAsync(async (req, res) => {
 });
 
 const stripeWebhook = catchAsync(async (req, res) => {
-  const stripe = require('stripe')(require('../../config').default.stripe_secret_key);
   const sig = req.headers['stripe-signature'];
 
   let event;
@@ -57,8 +58,8 @@ const stripeWebhook = catchAsync(async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
-      sig,
-      require('../../config').default.stripe_webhook_secret
+      sig as string,
+      config.stripe_webhook_secret as string
     );
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);

@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
-import prisma from '../../utils/prisma';
+import prisma from '../../lib/prisma';
 import { RequestStatus } from '../../../generated/prisma';
 
 const createRentalRequest = async (tenantId: string, payload: { propertyId: string; message: string }) => {

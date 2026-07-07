@@ -1,5 +1,5 @@
 import { Prisma } from '../../../generated/prisma';
-import prisma from '../../utils/prisma';
+import prisma from '../../lib/prisma';
 
 const createProperty = async (landlordId: string, payload: any) => {
   const result = await prisma.property.create({

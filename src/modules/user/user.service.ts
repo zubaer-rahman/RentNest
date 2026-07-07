@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
-import prisma from '../../utils/prisma';
+import prisma from '../../lib/prisma';
 import { UserStatus } from '../../../generated/prisma';
 
 const updateProfile = async (id: string, payload: any) => {

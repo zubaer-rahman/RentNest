@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
-import prisma from '../../utils/prisma';
+import prisma from '../../lib/prisma';
 
 const createCategory = async (payload: { name: string }) => {
   const result = await prisma.category.create({
