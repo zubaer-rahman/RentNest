@@ -15,7 +15,8 @@
     "migrate:deploy": "npx prisma migrate deploy",
     "generate": "npx prisma generate",
     "studio": "npx prisma studio",
-    "lint": "npx tsc --noEmit"
+    "lint": "npx tsc --noEmit",
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
