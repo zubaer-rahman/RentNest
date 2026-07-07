@@ -9,6 +9,7 @@ import { PropertyRoutes } from '../modules/property/property.route';
 import { RentalRoutes } from '../modules/rental/rental.route';
 import { PaymentRoutes } from '../modules/payment/payment.route';
 import { ReviewRoutes } from '../modules/review/review.route';
+import { LandlordRoutes } from '../modules/landlord/landlord.route';
 
 const router = express.Router();
 
@@ -44,6 +45,10 @@ const moduleRoutes = [
   {
     path: '/reviews',
     route: ReviewRoutes,
+  },
+  {
+    path: '/landlord',
+    route: LandlordRoutes,
   }
 ];
 

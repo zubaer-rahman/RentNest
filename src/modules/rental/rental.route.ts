@@ -16,24 +16,17 @@ router.post(
 );
 
 // Shared: tenant sees their own, landlord sees requests for their properties
+// NOTE: Landlord's /api/landlord/requests is handled in landlord.route.ts
 router.get(
   '/',
-  auth(Role.TENANT, Role.LANDLORD),
+  auth(Role.TENANT),
   RentalController.getMyRentalRequests,
 );
 
 router.get(
   '/:id',
-  auth(Role.TENANT, Role.LANDLORD),
+  auth(Role.TENANT),
   RentalController.getRentalRequestById,
-);
-
-// Landlord approves / rejects
-router.patch(
-  '/:id',
-  auth(Role.LANDLORD),
-  validateRequest(RentalValidation.updateRentalStatusValidationSchema),
-  RentalController.updateRentalRequestStatus,
 );
 
 export const RentalRoutes = router;

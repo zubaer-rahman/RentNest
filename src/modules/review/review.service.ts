@@ -12,7 +12,7 @@ const createReview = async (
     where: {
       tenantId,
       propertyId: payload.propertyId,
-      status: RequestStatus.APPROVED,
+      status: { in: [RequestStatus.ACTIVE, RequestStatus.COMPLETED] },
       payments: {
         some: { status: PaymentStatus.COMPLETED },
       },

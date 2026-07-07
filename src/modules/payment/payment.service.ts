@@ -84,7 +84,7 @@ const confirmPayment = async (tenantId: string, payload: { transactionId: string
   // Update rental request status to ACTIVE after payment
   await prisma.rentalRequest.update({
     where: { id: payment.rentalRequestId },
-    data: { status: RequestStatus.APPROVED }, // stays APPROVED; can add ACTIVE if enum is extended
+    data: { status: RequestStatus.ACTIVE },
   });
 
   return updatedPayment;

@@ -11,21 +11,7 @@ const router = express.Router();
 router.get('/', PropertyController.getAllProperties);
 router.get('/:id', PropertyController.getPropertyById);
 
-// Landlord routes
-router.post(
-  '/',
-  auth(Role.LANDLORD),
-  validateRequest(PropertyValidation.createPropertyValidationSchema),
-  PropertyController.createProperty,
-);
+// Landlord routes are now handled in landlord.route.ts
 
-router.put(
-  '/:id',
-  auth(Role.LANDLORD),
-  validateRequest(PropertyValidation.updatePropertyValidationSchema),
-  PropertyController.updateProperty,
-);
-
-router.delete('/:id', auth(Role.LANDLORD), PropertyController.deleteProperty);
 
 export const PropertyRoutes = router;
