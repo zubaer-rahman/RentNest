@@ -17,6 +17,14 @@ const register = catchAsync(async (req, res) => {
 const login = catchAsync(async (req, res) => {
   const result = await AuthService.login(req.body);
 
+  // Set accessToken in cookie for browser clients
+  res.cookie('accessToken', result.accessToken, {
+    httpOnly: true,
+    secure: process.env['NODE_ENV'] === 'production',
+    sameSite: 'none',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

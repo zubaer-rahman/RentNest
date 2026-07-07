@@ -7,18 +7,16 @@ import { Role } from '../../../generated/prisma';
 
 const router = express.Router();
 
+router.post('/webhook', express.raw({ type: 'application/json' }), PaymentController.stripeWebhook);
+
+router.get('/success', PaymentController.paymentSuccess);
+router.get('/cancel', PaymentController.paymentCancel);
+
 router.post(
   '/create',
   auth(Role.TENANT),
   validateRequest(PaymentValidation.createPaymentValidationSchema),
   PaymentController.createPayment,
-);
-
-router.post(
-  '/confirm',
-  auth(Role.TENANT),
-  validateRequest(PaymentValidation.confirmPaymentValidationSchema),
-  PaymentController.confirmPayment,
 );
 
 router.get('/', auth(Role.TENANT), PaymentController.getMyPayments);

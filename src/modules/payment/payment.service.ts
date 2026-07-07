@@ -1,12 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../lib/prisma';
+import stripe from '../../lib/stripe';
+import config from '../../config';
 import { PaymentStatus, RequestStatus } from '../../../generated/prisma';
 
 const createPayment = async (
   tenantId: string,
-  payload: { rentalRequestId: string; provider: string },
+  payload: { rentalRequestId: string },
 ) => {
   const rentalRequest = await prisma.rentalRequest.findUnique({
     where: { id: payload.rentalRequestId },
@@ -25,7 +26,6 @@ const createPayment = async (
     throw new AppError(httpStatus.BAD_REQUEST, 'Payment can only be made for approved rental requests');
   }
 
-  // Check if payment already exists
   const existingPayment = await prisma.payment.findFirst({
     where: {
       rentalRequestId: payload.rentalRequestId,
@@ -37,51 +37,71 @@ const createPayment = async (
     throw new AppError(httpStatus.CONFLICT, 'Payment has already been completed for this request');
   }
 
-  // Create a pending payment record
-  // In a real implementation, this is where you'd call Stripe/SSLCommerz API
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `Rent for ${rentalRequest.property.title}`,
+          },
+          unit_amount: Math.round(rentalRequest.property.rent * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: `${config.app_url}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.app_url}/api/payments/cancel`,
+    metadata: {
+      rentalRequestId: payload.rentalRequestId,
+      tenantId,
+    },
+  });
+
   const payment = await prisma.payment.create({
     data: {
-      transactionId: uuidv4(), // Placeholder until gateway returns one
+      transactionId: session.id,
       rentalRequestId: payload.rentalRequestId,
       amount: rentalRequest.property.rent,
       method: 'ONLINE',
-      provider: payload.provider,
+      provider: 'STRIPE',
       status: PaymentStatus.PENDING,
     },
   });
 
   return {
     paymentId: payment.id,
+    transactionId: payment.transactionId,
+    paymentUrl: session.url,
     amount: payment.amount,
     provider: payment.provider,
     status: payment.status,
-    message: `Proceed to complete payment via ${payload.provider}`,
   };
 };
 
-const confirmPayment = async (tenantId: string, payload: { transactionId: string }) => {
+const handleStripeWebhookSuccess = async (sessionId: string) => {
   const payment = await prisma.payment.findUnique({
-    where: { transactionId: payload.transactionId },
-    include: { rentalRequest: true },
+    where: { transactionId: sessionId },
   });
 
   if (!payment) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Payment record not found');
+    throw new AppError(httpStatus.NOT_FOUND, `No payment record found for Checkout Session: ${sessionId}`);
   }
 
-  if (payment.rentalRequest.tenantId !== tenantId) {
-    throw new AppError(httpStatus.FORBIDDEN, 'You are not authorized to confirm this payment');
+  if (payment.status === PaymentStatus.COMPLETED) {
+    return payment;
   }
 
   const updatedPayment = await prisma.payment.update({
-    where: { transactionId: payload.transactionId },
+    where: { transactionId: sessionId },
     data: {
       status: PaymentStatus.COMPLETED,
       paidAt: new Date(),
     },
   });
 
-  // Update rental request status to ACTIVE after payment
   await prisma.rentalRequest.update({
     where: { id: payment.rentalRequestId },
     data: { status: RequestStatus.ACTIVE },
@@ -91,11 +111,9 @@ const confirmPayment = async (tenantId: string, payload: { transactionId: string
 };
 
 const getMyPayments = async (userId: string) => {
-  const result = await prisma.payment.findMany({
+  return prisma.payment.findMany({
     where: {
-      rentalRequest: {
-        tenantId: userId,
-      },
+      rentalRequest: { tenantId: userId },
     },
     include: {
       rentalRequest: {
@@ -104,8 +122,6 @@ const getMyPayments = async (userId: string) => {
     },
     orderBy: { createdAt: 'desc' },
   });
-
-  return result;
 };
 
 const getPaymentById = async (id: string, userId: string) => {
@@ -131,7 +147,7 @@ const getPaymentById = async (id: string, userId: string) => {
 
 export const PaymentService = {
   createPayment,
-  confirmPayment,
+  handleStripeWebhookSuccess,
   getMyPayments,
   getPaymentById,
 };

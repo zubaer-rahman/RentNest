@@ -16,17 +16,6 @@ const createPayment = catchAsync(async (req, res) => {
   });
 });
 
-const confirmPayment = catchAsync(async (req, res) => {
-  const result = await PaymentService.confirmPayment(req.user.id, req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Payment confirmed successfully',
-    data: result,
-  });
-});
-
 const getMyPayments = catchAsync(async (req, res) => {
   const result = await PaymentService.getMyPayments(req.user.id);
 
@@ -39,8 +28,7 @@ const getMyPayments = catchAsync(async (req, res) => {
 });
 
 const getPaymentById = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const result = await PaymentService.getPaymentById(id as string, req.user.id);
+  const result = await PaymentService.getPaymentById(req.params['id'] as string, req.user.id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -50,7 +38,8 @@ const getPaymentById = catchAsync(async (req, res) => {
   });
 });
 
-const stripeWebhook = catchAsync(async (req, res) => {
+// Stripe sends raw body — must be registered before express.json() in app.ts
+const stripeWebhook = async (req: any, res: any) => {
   const sig = req.headers['stripe-signature'];
 
   let event;
@@ -59,27 +48,55 @@ const stripeWebhook = catchAsync(async (req, res) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig as string,
-      config.stripe_webhook_secret as string
+      config.stripe_webhook_secret as string,
     );
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
   }
 
-  // Handle the event
-  if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object;
-    // Here you would typically call a service method to update the payment status
-    // For example: await PaymentService.confirmStripePayment(paymentIntent.id);
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    try {
+      await PaymentService.handleStripeWebhookSuccess(session.id);
+    } catch (err: any) {
+      // Log but don't fail the webhook — Stripe retries on non-2xx
+      console.error('Webhook handler error:', err.message);
+    }
   }
 
   res.json({ received: true });
-});
+};
+
+const paymentSuccess = (req: any, res: any) => {
+  res.send(`
+    <html>
+      <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+        <h1 style="color: #4CAF50;">Payment Successful! 🎉</h1>
+        <p>Your payment has been processed and your rental request is now ACTIVE.</p>
+        <p>You can safely close this window.</p>
+      </body>
+    </html>
+  `);
+};
+
+const paymentCancel = (req: any, res: any) => {
+  res.send(`
+    <html>
+      <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+        <h1 style="color: #f44336;">Payment Cancelled ❌</h1>
+        <p>You cancelled the payment process. Your rental request is still pending payment.</p>
+        <p>You can safely close this window and try again later.</p>
+      </body>
+    </html>
+  `);
+};
 
 export const PaymentController = {
   createPayment,
-  confirmPayment,
   getMyPayments,
   getPaymentById,
   stripeWebhook,
+  paymentSuccess,
+  paymentCancel,
 };

@@ -8,7 +8,10 @@ import { jwtUtils } from '../utils/jwt';
 
 const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers.authorization?.split(' ')[1];
+    // Support both cookie and Authorization Bearer header
+    const tokenFromCookie = req.cookies?.accessToken;
+    const tokenFromHeader = req.headers.authorization?.split(' ')[1];
+    const token = tokenFromCookie || tokenFromHeader;
 
     if (!token) {
       throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
