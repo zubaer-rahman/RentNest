@@ -5,10 +5,17 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "server.ts",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "stripe:webhook": "stripe listen --forward-to localhost:5000/api/payments/webhook",
+    "migrate": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "generate": "npx prisma generate",
+    "studio": "npx prisma studio",
+    "lint": "npx tsc --noEmit"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
