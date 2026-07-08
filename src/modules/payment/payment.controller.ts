@@ -65,7 +65,17 @@ const stripeWebhook = async (req: any, res: any) => {
   res.json({ received: true });
 };
 
-const paymentSuccess = (req: any, res: any) => {
+const paymentSuccess = async (req: any, res: any) => {
+  const sessionId = req.query.session_id;
+
+  if (sessionId) {
+    try {
+      await PaymentService.handleStripeWebhookSuccess(sessionId as string);
+    } catch (err: any) {
+      console.error('Confirm redirect handler error:', err.message);
+    }
+  }
+
   res.send(`
     <html>
       <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
