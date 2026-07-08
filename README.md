@@ -17,7 +17,7 @@ A backend REST API for a rental property marketplace. Landlords list properties,
 | ORM | Prisma |
 | Auth | JWT |
 | Validation | Zod |
-| Payment | Stripe / SSLCommerz |
+| Payment | Stripe |
 
 ---
 
